@@ -14,15 +14,11 @@ const dAi = document.getElementById("dAi");
 const btnExplain = document.getElementById("btnExplain");
 const back = document.getElementById("back");
 
-// Загружаем слова из JSON
 fetch("words.json")
   .then(r => r.json())
   .then(data => {
     WORDS = data;
     render();
-  })
-  .catch(err => {
-    list.innerHTML = "<div style='color:red; padding:20px'>Ошибка загрузки словаря. Проверь words.json</div>";
   });
 
 function render() {
@@ -57,14 +53,45 @@ back.addEventListener("click", () => {
   current = null;
 });
 
-btnExplain.addEventListener("click", () => {
+btnExplain.addEventListener("click", async () => {
   if (!current) return;
-  // Отправляем данные боту
-  tg.sendData(JSON.stringify({
-    term: current.term,
-    def: current.def,
-    idx: current.idx
-  }));
+  
+  // Меняем текст кнопки, пока думаем
+  btnExplain.textContent = "⏳ Думаю...";
+  btnExplain.disabled = true;
+  dAi.textContent = "Нейросеть анализирует слово...";
+
+  try {
+    // Запрос напрямую к бесплатному Groq
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer ВСТАВЬ_СЮДА_СВОЙ_НОВЫЙ_КЛЮЧ_GROQ",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: "Ты — толкователь сленга Happy House. Объясни слово живо, с юмором, 3-6 предложений." },
+          { role: "user", content: `Слово: ${current.term}\nТолкование: ${current.def}` }
+        ],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.choices && data.choices[0]) {
+      dAi.textContent = data.choices[0].message.content;
+    } else {
+      dAi.textContent = "Ошибка: " + JSON.stringify(data);
+    }
+  } catch (error) {
+    dAi.textContent = "Ошибка сети. Проверь интернет.";
+  } finally {
+    btnExplain.textContent = "✨ Пояснить от ИИ";
+    btnExplain.disabled = false;
+  }
 });
 
 function truncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
