@@ -17,9 +17,7 @@
     <p class="sub">Толковый словарь · Limited Edition · 2026-2027</p>
   </header>
 
-  <main class="glass panel" id="list">
-    <!-- Сюда загрузятся слова -->
-  </main>
+  <main class="glass panel" id="list"></main>
 
   <section class="glass panel hidden" id="detail">
     <button class="back" id="back">← Назад</button>
@@ -29,6 +27,106 @@
     <button class="explain" id="btnExplain">✨ Пояснить от ИИ</button>
     <p class="footer-note">Сгенерировано AI, могут быть неточности</p>
   </section>
+
+<script>
+const tg = window.Telegram?.WebApp;
+tg?.ready(); 
+tg?.expand();
+
+let WORDS = [];
+let current = null;
+
+const list = document.getElementById("list");
+const detail = document.getElementById("detail");
+const dTerm = document.getElementById("dTerm");
+const dDef = document.getElementById("dDef");
+const dAi = document.getElementById("dAi");
+const btnExplain = document.getElementById("btnExplain");
+const back = document.getElementById("back");
+
+fetch("words.json")
+  .then(r => r.json())
+  .then(data => {
+    WORDS = data;
+    render();
+  })
+  .catch(e => {
+    list.innerHTML = "<p style='padding:20px'>Ошибка загрузки: " + e + "</p>";
+  });
+
+function render() {
+  list.innerHTML = "";
+  WORDS.forEach((w, i) => {
+    const el = document.createElement("div");
+    el.className = "word-item";
+    el.innerHTML = `
+      <div>
+        <div class="word-term">${escapeHtml(w.term)}</div>
+        <div class="word-def">${escapeHtml(truncate(w.def, 60))}</div>
+      </div>
+      <div class="chev">›</div>`;
+    el.addEventListener("click", () => open(i));
+    list.appendChild(el);
+  });
+}
+
+function open(i) {
+  current = { ...WORDS[i], idx: i };
+  dTerm.textContent = current.term;
+  dDef.textContent = current.def;
+  dAi.textContent = "Пояснение от ИИ появится после нажатия «Пояснить».";
+  list.classList.add("hidden");
+  detail.classList.remove("hidden");
+}
+
+back.addEventListener("click", () => {
+  detail.classList.add("hidden");
+  list.classList.remove("hidden");
+  current = null;
+});
+
+btnExplain.addEventListener("click", async () => {
+  if (!current) return;
+  
+  btnExplain.textContent = "⏳ Думаю...";
+  btnExplain.disabled = true;
+  dAi.textContent = "Нейросеть анализирует слово...";
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer gsk_ВСТАВЬ_СЮДА_СВОЙ_НОВЫЙ_КЛЮЧ",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: "Ты — толкователь сленга Happy House. Объясни слово живо, с юмором, 3-6 предложений на русском." },
+          { role: "user", content: "Слово: " + current.term + "\nТолкование: " + current.def }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.choices && data.choices[0]) {
+      dAi.textContent = data.choices[0].message.content;
+    } else {
+      dAi.textContent = "Ошибка от Groq. Проверь ключ.";
+    }
+  } catch (error) {
+    dAi.textContent = "Ошибка сети. Проверь интернет.";
+  } finally {
+    btnExplain.textContent = "✨ Пояснить от ИИ";
+    btnExplain.disabled = false;
+  }
+});
+
+function truncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+</script>
 </body>
-<script src="app.js"></script>
 </html>
