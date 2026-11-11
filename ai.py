@@ -1,5 +1,5 @@
 from openai import AsyncOpenAI
-from config import OPENAI_API_KEY
+from config import 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
 
 client = AsyncOpenAI(api_key=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)
 
