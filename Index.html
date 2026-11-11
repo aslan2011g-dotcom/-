@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Happy House Dictionary</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="bg-orb orb1"></div>
+  <div class="bg-orb orb2"></div>
+  <div class="bg-orb orb3"></div>
+
+  <header class="glass header">
+    <h1>Happy House</h1>
+    <p class="sub">Толковый словарь · Limited Edition · 2026-2027</p>
+  </header>
+
+  <main class="glass panel" id="list"></main>
+
+  <section class="glass panel hidden" id="detail">
+    <button class="back" id="back">← Назад</button>
+    <h2 id="dTerm"></h2>
+    <p class="def" id="dDef"></p>
+    <div class="ai" id="dAi">Пояснение от ИИ появится после нажатия «Пояснить».</div>
+    <button class="explain" id="btnExplain">✨ Пояснить от ИИ</button>
+    <p class="footer-note">Сгенерировано AI, могут быть неточности</p>
+  </section>
+</body>
+<script src="app.js"></script>
+</html>
