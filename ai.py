@@ -1,9 +1,14 @@
-from openai import AsyncOpenAI
-from config import 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
+import os
+from groq import AsyncGroq
+from dotenv import load_dotenv
 
-client = AsyncOpenAI(api_key=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)
+# Загружаем переменные из файла .env (если он есть)
+load_dotenv()
 
-SYSTEM = (
+# Берем ключ из настроек. НИ В КОЕМ СЛУЧАЕ не пиши ключ прямо сюда!
+client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+
+SYSTEM_PROMPT = (
     "Ты — толкователь внутреннего сленга школьного сообщества «Happy House» (сезон 2026-2027). "
     "Тебе дают слово и официальное краткое толкование из их словаря. "
     "Твоя задача — дать живое, дружелюбное пояснение на русском (3-6 предложений): "
@@ -13,13 +18,17 @@ SYSTEM = (
 )
 
 async def explain(term: str, definition: str) -> str:
-    resp = await client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": SYSTEM},
-            {"role": "user", "content": f"Слово: {term}\nОфициальное толкование: {definition}\n\nПоясни подробнее."},
-        ],
-        temperature=0.7,
-        max_tokens=400,
-    )
-    return resp.choices[0].message.content.strip()
+    try:
+        response = await client.chat.completions.create(
+            # Бесплатная и мощная модель
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": f"Слово: {term}\nОфициальное толкование: {definition}\n\nПоясни подробнее."},
+            ],
+            temperature=0.7,
+            max_tokens=400,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Ошибка при запросе к ИИ: {e}"
