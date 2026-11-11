@@ -1,8 +1,10 @@
 const tg = window.Telegram?.WebApp;
-tg?.ready(); tg?.expand();
+tg?.ready(); 
+tg?.expand();
 tg?.setHeaderColor?.("#0a0f1f");
 
-const WORDS = /*__WORDS__*/;  // вставим ниже
+let WORDS = [];
+let current = null;
 
 const list = document.getElementById("list");
 const detail = document.getElementById("detail");
@@ -12,7 +14,16 @@ const dAi = document.getElementById("dAi");
 const btnExplain = document.getElementById("btnExplain");
 const back = document.getElementById("back");
 
-let current = null;
+// Загружаем слова из JSON
+fetch("words.json")
+  .then(r => r.json())
+  .then(data => {
+    WORDS = data;
+    render();
+  })
+  .catch(err => {
+    list.innerHTML = "<div style='color:red; padding:20px'>Ошибка загрузки словаря. Проверь words.json</div>";
+  });
 
 function render() {
   list.innerHTML = "";
@@ -48,13 +59,12 @@ back.addEventListener("click", () => {
 
 btnExplain.addEventListener("click", () => {
   if (!current) return;
-  // Отправляем данные боту → он пришлёт пояснение в чат
+  // Отправляем данные боту
   tg.sendData(JSON.stringify({
     term: current.term,
     def: current.def,
     idx: current.idx
   }));
-  // WebApp закроется — это ограничение Telegram
 });
 
 function truncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
@@ -63,5 +73,3 @@ function escapeHtml(s) {
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
   }[c]));
 }
-
-render();
