@@ -1,0 +1,97 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; padding: 0;
+  min-height: 100vh;
+  font-family: -apple-system, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  color: #eaf6ff;
+  background: radial-gradient(1200px 600px at 10% 0%, #1a2340 0%, #0a0f1f 55%, #050810 100%);
+  overflow-x: hidden;
+}
+
+/* Плавающие светящиеся орбы */
+.bg-orb {
+  position: fixed; border-radius: 50%; filter: blur(80px);
+  opacity: .55; pointer-events: none; z-index: 0;
+  animation: float 18s ease-in-out infinite;
+}
+.orb1 { width: 320px; height: 320px; background: #3b82f6; top: -60px; left: -80px; }
+.orb2 { width: 260px; height: 260px; background: #a855f7; top: 40%; right: -80px; animation-delay: -6s; }
+.orb3 { width: 300px; height: 300px; background: #22d3ee; bottom: -120px; left: 20%; animation-delay: -12s; }
+
+@keyframes float {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(30px,-40px) scale(1.1); }
+}
+
+/* Стекло */
+.glass {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+  position: relative; z-index: 1;
+}
+
+.header {
+  margin: 16px;
+  padding: 20px 22px;
+  text-align: center;
+}
+.header h1 {
+  margin: 0; font-size: 26px; letter-spacing: .5px;
+  background: linear-gradient(90deg,#7dd3fc,#c4b5fd,#f0abfc);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.sub { margin: 6px 0 0; font-size: 12px; opacity: .75; }
+
+.panel { margin: 0 16px 16px; padding: 14px; }
+
+/* Список слов */
+.word-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 16px; margin-bottom: 8px;
+  border-radius: 14px; cursor: pointer;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: transform .15s, background .2s;
+}
+.word-item:active { transform: scale(0.98); }
+.word-item:hover { background: rgba(255,255,255,0.12); }
+.word-term { font-weight: 600; font-size: 15px; }
+.word-def { font-size: 12px; opacity: .7; margin-top: 3px; }
+.chev { opacity: .5; font-size: 18px; }
+
+/* Детали */
+.hidden { display: none; }
+.back {
+  background: rgba(255,255,255,0.1); color: #eaf6ff;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
+  padding: 8px 14px; font-size: 13px; cursor: pointer;
+}
+.back:active { transform: scale(0.97); }
+#dTerm {
+  margin: 14px 0 6px; font-size: 22px;
+  background: linear-gradient(90deg,#7dd3fc,#c4b5fd);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.def { font-style: italic; opacity: .85; line-height: 1.5; }
+.ai {
+  margin: 14px 0; padding: 14px;
+  border-radius: 14px; line-height: 1.55; font-size: 14px;
+  background: rgba(34,211,238,0.08);
+  border: 1px solid rgba(34,211,238,0.25);
+  white-space: pre-wrap;
+}
+.explain {
+  width: 100%; padding: 14px;
+  border-radius: 14px; border: none; cursor: pointer;
+  font-weight: 600; font-size: 15px; color: #06121f;
+  background: linear-gradient(90deg,#7dd3fc,#c4b5fd);
+  box-shadow: 0 6px 22px rgba(125,211,252,0.35);
+  transition: transform .15s;
+}
+.explain:active { transform: scale(0.98); }
+.footer-note { text-align: center; font-size: 11px; opacity: .5; margin: 14px 0 4px; }
