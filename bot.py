@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart
 from aiogram.types import Message, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 from config import BOT_TOKEN, WEBAPP_URL
-from ai import explain
+from ai import explain # Наша новая функция пояснений
 
 bot = Bot(BOT_TOKEN)
 dp = Dispatcher()
@@ -17,23 +17,26 @@ async def start(m: Message):
     kb = InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(text="📖 Открыть словарь", web_app=WebAppInfo(url=WEBAPP_URL))
     ]])
-    await m.answer("Привет! Это интерактивный словарь Happy House.\nОткрывай Mini App 👇", reply_markup=kb)
+    await m.answer("Привет! Открывай словарь 👇", reply_markup=kb)
 
-# --- БОТ ЛОВИТ ДАННЫЕ ОТ САЙТА И ОТВЕЧАЕТ В ЧАТ ---
+# --- ВОТ ЭТОТ БЛОК ЛОВИТ ДАННЫЕ ОТ САЙТА ---
 @dp.message(F.web_app_data)
 async def on_webapp_data(m: Message):
     try:
         data = json.loads(m.web_app_data.data)
         term = data.get("term")
         definition = data.get("def")
-    except:
-        await m.answer("Ошибка чтения данных от сайта.")
+    except Exception as e:
+        await m.answer(f"Ошибка чтения данных: {e}")
         return
 
+    # Отправляем "Думаю..."
     msg = await m.answer("⏳ Думаю...")
-    # Вызываем нашего локального ИИ
+    
+    # Получаем текст от нашего локального ИИ (из ai.py)
     text = explain(term, definition)
     
+    # Меняем сообщение на ответ
     await msg.edit_text(
         f"<b>{term}</b>\n\n<i>{definition}</i>\n\n{text}\n\n"
         "<i>Сгенерировано AI, могут быть неточности</i>",
@@ -43,7 +46,7 @@ async def on_webapp_data(m: Message):
         ]])
     )
 
-# --- ЗАГЛУШКА ДЛЯ RENDER (чтобы он не перезапускал бота) ---
+# --- ВЕБ-СЕРВЕР (чтобы Render не перезапускал бота) ---
 async def handle_root(request):
     return web.Response(text="Bot is alive!")
 
