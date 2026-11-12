@@ -23,7 +23,7 @@
     <button class="back" id="back">← Назад</button>
     <h2 id="dTerm"></h2>
     <p class="def" id="dDef"></p>
-    <div class="ai" id="dAi">Пояснение от ИИ появится после нажатия «Пояснить».</div>
+    <div class="ai" id="dAi">Пояснение от ИИ появится в чате Telegram после нажатия «Пояснить».</div>
     <button class="explain" id="btnExplain">✨ Пояснить от ИИ</button>
     <p class="footer-note">Сгенерировано AI, могут быть неточности</p>
   </section>
@@ -32,6 +32,7 @@
 const tg = window.Telegram?.WebApp;
 tg?.ready(); 
 tg?.expand();
+tg?.setHeaderColor?.("#0a0f1f");
 
 let WORDS = [];
 let current = null;
@@ -44,14 +45,15 @@ const dAi = document.getElementById("dAi");
 const btnExplain = document.getElementById("btnExplain");
 const back = document.getElementById("back");
 
+// Загружаем слова из JSON
 fetch("words.json")
   .then(r => r.json())
   .then(data => {
     WORDS = data;
     render();
   })
-  .catch(e => {
-    list.innerHTML = "<p style='padding:20px'>Ошибка загрузки: " + e + "</p>";
+  .catch(err => {
+    list.innerHTML = "<div style='color:red; padding:20px'>Ошибка загрузки словаря. Проверь words.json</div>";
   });
 
 function render() {
@@ -74,9 +76,10 @@ function open(i) {
   current = { ...WORDS[i], idx: i };
   dTerm.textContent = current.term;
   dDef.textContent = current.def;
-  dAi.textContent = "Пояснение от ИИ появится после нажатия «Пояснить».";
+  dAi.textContent = "Пояснение от ИИ появится в чате Telegram после нажатия «Пояснить».";
   list.classList.add("hidden");
   detail.classList.remove("hidden");
+  tg?.HapticFeedback?.impactOccurred("light");
 }
 
 back.addEventListener("click", () => {
@@ -85,39 +88,22 @@ back.addEventListener("click", () => {
   current = null;
 });
 
-btnExplain.addEventListener("click", async () => {
+// Кнопка отправки данных в бота
+btnExplain.addEventListener("click", () => {
   if (!current) return;
   
-  btnExplain.textContent = "⏳ Думаю...";
+  btnExplain.textContent = "⏳ Отправлено в чат...";
   btnExplain.disabled = true;
-  dAi.textContent = "Нейросеть анализирует слово...";
-
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer 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",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: "Ты — толкователь сленга Happy House. Объясни слово живо, с юмором, 3-6 предложений на русском." },
-          { role: "user", content: "Слово: " + current.term + "\nТолкование: " + current.def }
-        ]
-      })
-    });
-
-    const data = await response.json();
-    
-    if (data.choices && data.choices[0]) {
-      dAi.textContent = data.choices[0].message.content;
-    } else {
-      dAi.textContent = "Ошибка от Groq. Проверь ключ.";
-    }
-  } catch (error) {
-    dAi.textContent = "Ошибка сети. Проверь интернет.";
-  } finally {
+  dAi.textContent = "Бот сейчас пришлёт ответ в чат Telegram. Откройте чат с ботом, чтобы прочитать!";
+  
+  // Отправляем данные в Telegram
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.sendData(JSON.stringify({
+      term: current.term,
+      def: current.def
+    }));
+  } else {
+    dAi.textContent = "Эта кнопка работает только внутри Telegram!";
     btnExplain.textContent = "✨ Пояснить от ИИ";
     btnExplain.disabled = false;
   }
@@ -125,7 +111,9 @@ btnExplain.addEventListener("click", async () => {
 
 function truncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
 function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  return s.replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
 }
 </script>
 </body>
