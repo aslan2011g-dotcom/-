@@ -1,34 +1,45 @@
+import asyncio
 import os
-from groq import AsyncGroq
-from dotenv import load_dotenv
+from aiohttp import web
 
-# Загружаем переменные из файла .env (если он есть)
-load_dotenv()
+from aiogram import Bot, Dispatcher, F
+from aiogram.filters import CommandStart
+from aiogram.types import Message, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
+from config import BOT_TOKEN, WEBAPP_URL
+from data import WORDS
+from ai import explain
 
-# Берем ключ из настроек. НИ В КОЕМ СЛУЧАЕ не пиши ключ прямо сюда!
-client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+bot = Bot(BOT_TOKEN)
+dp = Dispatcher()
 
-SYSTEM_PROMPT = (
-    "Ты — толкователь внутреннего сленга школьного сообщества «Happy House» (сезон 2026-2027). "
-    "Тебе дают слово и официальное краткое толкование из их словаря. "
-    "Твоя задача — дать живое, дружелюбное пояснение на русском (3-6 предложений): "
-    "что это значит, в каком контексте употребляется, какие ассоциации/шутки могут быть. "
-    "Не выдумывай факты, которых нет; если данных мало — так и скажи. "
-    "Пиши с лёгким юмором, но без грубости."
-)
+@dp.message(CommandStart())
+async def start(m: Message):
+    kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="📖 Открыть словарь", web_app=WebAppInfo(url=WEBAPP_URL))
+    ]])
+    await m.answer("Привет! Открывай словарь 👇", reply_markup=kb)
 
-async def explain(term: str, definition: str) -> str:
-    try:
-        response = await client.chat.completions.create(
-            # Бесплатная и мощная модель
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Слово: {term}\nОфициальное толкование: {definition}\n\nПоясни подробнее."},
-            ],
-            temperature=0.7,
-            max_tokens=400,
-        )
-        return response.choices[0].message.content.strip()
-    except Exception as e:
-        return f"Ошибка при запросе к ИИ: {e}"
+# --- КРОШЕЧНЫЙ ВЕБ-СЕРВЕР ДЛЯ RENDER ---
+async def handle_root(request):
+    return web.Response(text="Bot is alive!")
+
+async def start_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle_root)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    # Render сам дает порт в переменную PORT
+    port = int(os.getenv("PORT", 8080))
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    print(f"Веб-сервер запущен на порту {port}")
+
+# --- ЗАПУСК ---
+async def main():
+    # Запускаем веб-сервер в фоне (чтобы Render видел порт)
+    asyncio.create_task(start_web_server())
+    # Запускаем самого бота
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
