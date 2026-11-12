@@ -1,45 +1,35 @@
-import asyncio
-import os
-from aiohttp import web
+import random
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
-from aiogram.types import Message, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
-from config import BOT_TOKEN, WEBAPP_URL
-from data import WORDS
-from ai import explain
-
-bot = Bot(BOT_TOKEN)
-dp = Dispatcher()
-
-@dp.message(CommandStart())
-async def start(m: Message):
-    kb = InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="📖 Открыть словарь", web_app=WebAppInfo(url=WEBAPP_URL))
-    ]])
-    await m.answer("Привет! Открывай словарь 👇", reply_markup=kb)
-
-# --- КРОШЕЧНЫЙ ВЕБ-СЕРВЕР ДЛЯ RENDER ---
-async def handle_root(request):
-    return web.Response(text="Bot is alive!")
-
-async def start_web_server():
-    app = web.Application()
-    app.router.add_get('/', handle_root)
-    runner = web.AppRunner(app)
-    await runner.setup()
-    # Render сам дает порт в переменную PORT
-    port = int(os.getenv("PORT", 8080))
-    site = web.TCPSite(runner, '0.0.0.0', port)
-    await site.start()
-    print(f"Веб-сервер запущен на порту {port}")
-
-# --- ЗАПУСК ---
-async def main():
-    # Запускаем веб-сервер в фоне (чтобы Render видел порт)
-    asyncio.create_task(start_web_server())
-    # Запускаем самого бота
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+def explain(term: str, definition: str) -> str:
+    # Наш "ИИ" ищет ключевые слова в толковании и генерирует ответ
+    term_lower = term.lower()
+    def_lower = definition.lower()
+    
+    intro = random.choice([
+        "Слушай, тут всё просто:",
+        "Короче, расклад такой:",
+        "А, это классика Happy House:",
+        "Давай разберем по-человечески:",
+        "Можно сказать так:"
+    ])
+    
+    context = "Это словечко из внутреннего сленга. "
+    if "учител" in def_lower or "виолетт" in def_lower:
+        context += "У нас в классе за это отвечает Виолетта Сергеевна. Обычно используется, когда хотят подколоть или сказать что-то с любовью, но по-своему. "
+    elif "шутк" in def_lower or "фраз" in def_lower:
+        context += "Фраза родилась спонтанно во время общения. Звучит очень по-родному, свои поймут сразу. "
+    elif "американ" in def_lower or "англ" in def_lower:
+        context += "Отсылка к нашим урокам английского, где мы иногда знатно тупим или смеемся. "
+    elif "ман" in def_lower or "магазин" in def_lower:
+        context += "Связано с нашими вылазками в магазины на переменах. Часто сопровождается суетой и беготней. "
+    else:
+        context += "Используется в узком кругу для описания забавной ситуации. "
+        
+    outro = random.choice([
+        "В общем, если услышишь это — не удивляйся, ты среди своих.",
+        "Так что запоминай, пригодится на консультациях!",
+        "Вот такой вот лор у нашего Happy House.",
+        "Скажешь такое на уроке — В. Сергеевна оценит (наверное)."
+    ])
+    
+    return f"🤖 **Пояснение от бота:**\n\n{intro} «{term}» — это {definition.lower().rstrip('.')}.\n\n{context}\n\n{outro}"
