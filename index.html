@@ -23,9 +23,9 @@
     <button class="back" id="back">← Назад</button>
     <h2 id="dTerm"></h2>
     <p class="def" id="dDef"></p>
-    <div class="ai" id="dAi">Пояснение от ИИ появится в чате Telegram после нажатия «Пояснить».</div>
+    <div class="ai" id="dAi" style="display: none;"></div>
     <button class="explain" id="btnExplain">✨ Пояснить от ИИ</button>
-    <p class="footer-note">Сгенерировано AI, могут быть неточности</p>
+    <p class="footer-note" id="footerNote" style="display: none;">Сгенерировано AI, могут быть неточности</p>
   </section>
 
 <script>
@@ -44,8 +44,8 @@ const dDef = document.getElementById("dDef");
 const dAi = document.getElementById("dAi");
 const btnExplain = document.getElementById("btnExplain");
 const back = document.getElementById("back");
+const footerNote = document.getElementById("footerNote");
 
-// Загружаем слова из JSON
 fetch("words.json")
   .then(r => r.json())
   .then(data => {
@@ -76,7 +76,15 @@ function open(i) {
   current = { ...WORDS[i], idx: i };
   dTerm.textContent = current.term;
   dDef.textContent = current.def;
-  dAi.textContent = "Пояснение от ИИ появится в чате Telegram после нажатия «Пояснить».";
+  
+  // Скрываем ИИ-блок при открытии нового слова
+  dAi.style.display = "none";
+  dAi.textContent = "";
+  footerNote.style.display = "none";
+  btnExplain.style.display = "block";
+  btnExplain.textContent = "✨ Пояснить от ИИ";
+  btnExplain.disabled = false;
+
   list.classList.add("hidden");
   detail.classList.remove("hidden");
   tg?.HapticFeedback?.impactOccurred("light");
@@ -88,32 +96,72 @@ back.addEventListener("click", () => {
   current = null;
 });
 
-// Кнопка отправки данных в бота
+// --- ЛОКАЛЬНЫЙ ИИ (Генератор пояснений) ---
 btnExplain.addEventListener("click", () => {
   if (!current) return;
   
-  btnExplain.textContent = "⏳ Отправлено в чат...";
+  btnExplain.textContent = "⏳ Думаю...";
   btnExplain.disabled = true;
-  dAi.textContent = "Бот сейчас пришлёт ответ в чат Telegram. Откройте чат с ботом, чтобы прочитать!";
-  
-  // Отправляем данные в Telegram
-  if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.sendData(JSON.stringify({
-      term: current.term,
-      def: current.def
-    }));
-  } else {
-    dAi.textContent = "Эта кнопка работает только внутри Telegram!";
-    btnExplain.textContent = "✨ Пояснить от ИИ";
-    btnExplain.disabled = false;
-  }
+
+  // Имитация задержки для эффекта "думания"
+  setTimeout(() => {
+    const text = generateAI(current.term, current.def);
+    dAi.textContent = text;
+    dAi.style.display = "block"; // Показываем блок
+    footerNote.style.display = "block"; // Показываем подпись
+    
+    btnExplain.style.display = "none"; // Прячем кнопку, чтобы не нажимали повторно
+  }, 800);
 });
+
+// Алгоритм генерации
+function generateAI(term, def) {
+  const t = term.toLowerCase();
+  const d = def.toLowerCase();
+  
+  const intros = [
+    "Слушай, тут всё просто:",
+    "Короче, расклад такой:",
+    "А, это классика Happy House:",
+    "Давай разберем по-человечески:",
+    "Можно сказать так:"
+  ];
+  
+  const outros = [
+    "В общем, если услышишь это — не удивляйся, ты среди своих.",
+    "Так что запоминай, пригодится на консультациях!",
+    "Вот такой вот лор у нашего Happy House.",
+    "Скажешь такое на уроке — В. Сергеевна оценит (наверное).",
+    "Используй с умом, чтобы не получить Hard punishment."
+  ];
+
+  const intro = intros[Math.floor(Math.random() * intros.length)];
+  const outro = outros[Math.floor(Math.random() * outros.length)];
+  
+  let context = "";
+
+  if (d.includes("учител") || d.includes("виолетт") || t.includes("чичер") || t.includes("птич")) {
+    context = "Это напрямую связано с нашей любимой Виолеттой Сергеевной. Обычно используется, когда хочется подколоть её или сказать что-то с любовью, но по-своему. В ход иногда идёт даже блокнот!";
+  } else if (d.includes("шутк") || d.includes("фраз") || d.includes("легендар")) {
+    context = "Фраза родилась спонтанно во время общения. Звучит очень по-родному, свои поймут с полуслова. Такое не заучивают, это просто витает в воздухе на уроках.";
+  } else if (d.includes("американ") || d.includes("англ") || d.includes("колумб")) {
+    context = "Отсылка к нашим урокам английского и колонизаторам. Тут и ОГЭ, и приколы, и вечное 'I'm pindos'. В общем, полный набор.";
+  } else if (d.includes("магазин") || d.includes("ман") || d.includes("карточк")) {
+    context = "Связано с нашими вылазками в магазины на переменах (или консультациях). Часто сопровождается суетой, беготней и миссией от пахана.";
+  } else if (d.includes("травм") || d.includes("устал") || d.includes("сломан")) {
+    context = "Это про наше состояние после долгих консультаций или чаепитий. Когда сидишь так долго, что копчик отваливается, а глаза уже не видят.";
+  } else if (t.includes("аслан") || t.includes("даша") || t.includes("владоша") || t.includes("вика")) {
+    context = "Это личная фишка или прозвище одного из наших замов. У каждого своя роль, свой характер и свои легендарные фразы.";
+  } else {
+    context = "Используется в узком кругу для описания забавной или немного абсурдной ситуации. Слово, которое понятно только избранным.";
+  }
+
+  return `${intro} «${term}» — это ${def.toLowerCase().replace(/\.$/, '')}.\n\n${context}\n\n${outro}`;
+}
 
 function truncate(s, n) { return s.length > n ? s.slice(0, n) + "…" : s; }
 function escapeHtml(s) {
-  return s.replace(/[&<>"']/g, c => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[c]));
+  return s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 }
 </script>
 </body>
